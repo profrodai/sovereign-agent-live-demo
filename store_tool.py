@@ -37,12 +37,12 @@ class InspectInventoryResponse(BaseModel):
 
 @capability(
     id="store.inspect_inventory@1.0.0",
-    description="Read the CURRENT on_hand and reorder_point for a store SKU from the governed ledger. Call this before proposing a restock; never guess stock levels.",
+    description="Read the CURRENT on_hand and reorder_point for an ice cream SKU from the governed ledger. Call this before proposing a restock; never guess stock levels.",
     effects={EffectKind.READ},
     examples=(
         CapabilityExample(
-            request={"sku": "SKU-TEA"},
-            response={"sku": "SKU-TEA", "on_hand": 2, "reorder_point": 3},
+            request={"sku": "SKU-VANILLA"},
+            response={"sku": "SKU-VANILLA", "on_hand": 2, "reorder_point": 3},
         ),
     ),
 )
@@ -94,7 +94,7 @@ def _chat(messages: list[dict], tools: list[dict]) -> dict:
     return json.load(r)["message"]
 
 
-def run_actor(db_path: str, sku: str = "SKU-TEA") -> tuple[int, list[str]]:
+def run_actor(db_path: str, sku: str = "SKU-VANILLA") -> tuple[int, list[str]]:
     """qwen decides a restock quantity by calling the ZeoCore tool. Returns (units, transcript)."""
     ctx = _ctx(db_path)
     tool_schema = {
@@ -109,7 +109,7 @@ def run_actor(db_path: str, sku: str = "SKU-TEA") -> tuple[int, list[str]]:
         {
             "role": "system",
             "content": (
-                "You are a Sovereign Agent store operator actor. You PROPOSE; you do not "
+                "You are a Sovereign Agent ice cream shop operator actor. You PROPOSE; you do not "
                 "commit. You MUST call inspect_inventory to learn real stock before proposing. "
                 f"Goal: keep {sku} at or ABOVE its reorder point. When ready, reply with exactly "
                 "one line: RESTOCK_UNITS: <integer>."
@@ -118,7 +118,7 @@ def run_actor(db_path: str, sku: str = "SKU-TEA") -> tuple[int, list[str]]:
         {"role": "user", "content": f"Keep {sku} stocked at or above its reorder point. How many units should we order?"},
     ]
     transcript: list[str] = []
-    for _turn in range(6):
+    for _turn in range(10):  # a small local model may need a few nudges; give it room
         msg = _chat(messages, [tool_schema])
         messages.append(msg)
         calls = msg.get("tool_calls") or []
@@ -129,7 +129,13 @@ def run_actor(db_path: str, sku: str = "SKU-TEA") -> tuple[int, list[str]]:
                 if isinstance(args, str):
                     args = json.loads(args)
                 result = invoke_sync(CAP, InspectInventoryRequest(**args), ctx)
-                payload = result.data.model_dump() if result.ok else {"error": result.msg}
+                # CapabilityResult.ok is a CONSTRUCTOR, not a bool — key on data.
+                # (And CapabilityResult has no .msg attribute, so don't touch it.)
+                payload = (
+                    result.data.model_dump()
+                    if result.data is not None
+                    else {"error": f"unknown sku {args.get('sku')!r}; the only valid sku is SKU-VANILLA"}
+                )
                 transcript.append(
                     f"qwen CALLED zeocore tool inspect_inventory({args}) -> {payload}"
                 )

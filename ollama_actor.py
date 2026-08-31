@@ -25,7 +25,7 @@ def main() -> int:
     root = output.parents[3]
     db_path = root / ".sovereign" / "organization.db"
 
-    units, transcript = run_actor(str(db_path), sku="SKU-TEA")
+    units, transcript = run_actor(str(db_path), sku="SKU-VANILLA")
     for line in transcript:
         print(line, file=sys.stderr)
 
