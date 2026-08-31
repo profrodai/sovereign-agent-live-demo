@@ -1,9 +1,10 @@
 # A Real Agent, Governed — a live Sovereign Agent demo
 
-> A real language model, running **on your own laptop**, makes a real tool call
-> to look up inventory, and then proposes a business action. A tiny "company"
-> written in Python **checks that proposal against reality before it is allowed
-> to happen** — and refuses it when it is out of bounds.
+> A real language model, running **on your own laptop**, helps run **Lucy's ice
+> cream shop**: it makes a real tool call to look up inventory, then proposes a
+> restock. A tiny "company" written in Python **checks that proposal against
+> reality before it is allowed to happen** — and refuses it when it is out of
+> bounds.
 >
 > Nothing here is scripted or faked. The model really decides. The governance
 > really checks. You will watch both happen, live.
@@ -75,24 +76,28 @@ textbook you then **break the database by hand** and re-run verification — and
 the company **refuses to accept** (exit code `1`). That is the punchline:
 *verification is not a rubber stamp.*
 
+> This built-in demo is the framework's own packaged shop — it happens to sell
+> tea. Steps 2 and 3 below run **Lucy's ice cream shop**, the book's running
+> example. The governance is identical; only the products differ.
+
 ### Step 2 — LIVE: a real model calls a real tool, and gets governed
 
 ```bash
 ./.venv/bin/python demo_tool_calling.py
 ```
 
-A customer buys tea; stock drops **below** the reorder point. The job is handed
-to a real local model (`qwen3:latest`). It is given **one tool**, built with
-ZeoCore: `inspect_inventory`. Watch it decide to call it:
+A customer buys vanilla ice cream; stock drops **below** the reorder point. The
+job is handed to a real local model (`qwen3:latest`). It is given **one tool**,
+built with ZeoCore: `inspect_inventory`. Watch it decide to call it:
 
 ```
 2) Handing the assignment to a REAL actor: qwen3:latest (local, no cloud).
    It is given ONE tool, built with ZeoCore: inspect_inventory. Watch it call it.
 
-   qwen CALLED zeocore tool inspect_inventory({'sku': 'SKU-TEA'}) -> {'sku': 'SKU-TEA', 'on_hand': 2, 'reorder_point': 3}
+   qwen CALLED zeocore tool inspect_inventory({'sku': 'SKU-VANILLA'}) -> {'sku': 'SKU-VANILLA', 'on_hand': 2, 'reorder_point': 3}
    qwen SAID: RESTOCK_UNITS: 1
 
-3) The actor PROPOSED: restock 1 units of SKU-TEA.
+3) The actor PROPOSED: restock 1 units of SKU-VANILLA.
 
 4) The Sovereign Agent does NOT trust the model. It re-validates the proposal
    against the ledger and reads the TRUE unit cost from the product record:
@@ -125,9 +130,9 @@ Agent pipeline — assignment → run → **atomic commit** → independent
    (qwen tool-calls the ZeoCore inspect_inventory capability, then proposes)...
 3) qwen's governed ActorReport proposed: 1 units.
 4) COMMITTED + VERIFIED + ACCEPTED.
-   inventory now: on_hand=3 (>= reorder 3) — jar genuinely full
-   cash ledger: [('cash-opening', 10000), ('cash', 800), ('cash', -120)]
-   status: out_...  ACCEPTED  Keep the tea jar stocked
+   inventory now: on_hand=3 (>= reorder 3) — tub genuinely full
+   cash ledger: [('cash-opening', 10000), ('cash', 1000), ('cash', -250)]
+   status: out_...  ACCEPTED  Keep the vanilla tub stocked
 ```
 
 A real local model tool-called a ZeoCore tool, and its proposal became a real,

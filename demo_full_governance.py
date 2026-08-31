@@ -24,15 +24,32 @@ from sovereign_agent.providers.base import (
 from sovereign_agent.models import Role
 from sovereign_agent.organization import Organization
 from reference_organizations.store import (
+    CatalogEntry,
+    Product,
     RestockProposal,
     apply_restock,
     below_reorder,
     record_sale,
-    seed,
+    seed_catalog,
 )
 
 ACTOR_SCRIPT = str(Path(__file__).resolve().parent / "ollama_actor.py")
-SKU = "SKU-TEA"
+SKU = "SKU-VANILLA"
+
+# Lucy's ice cream shop. seed_catalog needs >= 2 SKUs, each with its own
+# independent stock level and reorder point (one shared till).
+ICE_CREAM = (
+    CatalogEntry(
+        product=Product(sku="SKU-VANILLA", name="Vanilla ice cream",
+                        unit_cost_cents=250, price_cents=500),
+        on_hand=4, reorder_point=3,
+    ),
+    CatalogEntry(
+        product=Product(sku="SKU-CHOCOLATE", name="Chocolate ice cream",
+                        unit_cost_cents=260, price_cents=520),
+        on_hand=10, reorder_point=6,
+    ),
+)
 
 
 class OllamaProvider:
@@ -71,16 +88,16 @@ def main() -> int:
     print("=" * 74)
 
     org = Organization.init(root)
-    seed(org.db)
+    seed_catalog(org.db, ICE_CREAM)
     outcome = org.create_outcome(
-        title="Keep the tea jar stocked",
-        desired_state="On-hand tea is at or above the reorder point, the purchase is reconciled, and the replenishment is on the ledger.",
+        title="Keep the vanilla tub stocked",
+        desired_state="On-hand vanilla is at or above the reorder point, the purchase is reconciled, and the replenishment is on the ledger.",
         checks=["inventory_at_or_above_reorder_point", "cash_reconciles", "replenishment_event_exists"],
         owner="principal-human",
         subject=SKU,
     )
     org.activate(outcome.id, "master-course")
-    signal = record_sale(org.db, SKU, 2, 400)
+    signal = record_sale(org.db, SKU, 2, 500)
     assert below_reorder(org.db), "sale should cross the reorder point"
     before = org.db.connection.execute(
         "SELECT on_hand, reorder_point FROM inventory WHERE sku=?", (SKU,)
@@ -116,7 +133,7 @@ def main() -> int:
         "SELECT id, amount_cents FROM cash_entries ORDER BY rowid"
     ).fetchall()
     print(f"\n4) COMMITTED + VERIFIED + ACCEPTED.")
-    print(f"   inventory now: on_hand={after['on_hand']} (>= reorder {after['reorder_point']}) — jar genuinely full")
+    print(f"   inventory now: on_hand={after['on_hand']} (>= reorder {after['reorder_point']}) — tub genuinely full")
     print(f"   cash ledger: {[(c['id'].split('_')[0], c['amount_cents']) for c in cash]}")
     print(f"\n   status: {org.status_text(outcome.id).splitlines()[0]}")
     print("\nDONE — a real local LLM tool-called a ZeoCore tool and its proposal flowed")
