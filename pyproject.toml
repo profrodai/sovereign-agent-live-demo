@@ -1,0 +1,15 @@
+[project]
+name = "sovereign-agent-live-demo"
+version = "1.0.0"
+description = "Live, hands-on demo: a real local LLM tool-calls a ZeoCore capability and the Sovereign Agent governs the result."
+requires-python = ">=3.14"
+dependencies = [
+  # The two frameworks, straight from PyPI — the same thing you'd install in
+  # any real project. No dev repo, no editable installs.
+  "sovereign-agent==1.1.1", # the governance framework
+  "zeocore==0.6.0",         # the capability/tool framework the tool is built with
+]
+
+[tool.uv]
+# This is a demo script collection, not an installable package.
+package = false

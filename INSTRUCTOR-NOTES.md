@@ -19,9 +19,9 @@ a clean venv, with the small model `qwen3:latest`.
 ## Run order and timing
 | Step | Command | Time | The beat to land |
 |---|---|---|---|
-| 1 | `./.venv/bin/sovereign-agent demo store --mode simulated` | ~1 s | The company only accepts work when reality matches the claim. (In the book: break the DB → verification refuses, exit 1.) |
-| 2 | `./.venv/bin/python demo_tool_calling.py` | ~20–40 s | A **real** local model **calls a tool** it was handed. Then: cost comes from the ledger, and 9999 units is **refused**. |
-| 3 | `./.venv/bin/python demo_full_governance.py` | ~30–60 s | The model's proposal flows through the **whole** loop to a committed, verified, **accepted** outcome. Money moved. |
+| 1 | `uv run sovereign-agent demo store --mode simulated` | ~1 s | The company only accepts work when reality matches the claim. (In the book: break the DB → verification refuses, exit 1.) |
+| 2 | `uv run python demo_tool_calling.py` | ~20–40 s | A **real** local model **calls a tool** it was handed. Then: cost comes from the ledger, and 9999 units is **refused**. |
+| 3 | `uv run python demo_full_governance.py` | ~30–60 s | The model's proposal flows through the **whole** loop to a committed, verified, **accepted** outcome. Money moved. |
 
 ## Talking points
 - **Step 2, the tool call:** "Nobody told it to call the tool in code — it read
@@ -41,7 +41,7 @@ a clean venv, with the small model `qwen3:latest`.
 - `Connection refused` on 11434 → Ollama app isn't running (`ollama serve`).
 - Slow first run → model loading into RAM; warm it: `printf '' | ollama run qwen3:latest`.
 - Low RAM → stay on the default small model; do **not** use the 35B option.
-- Stronger actor on a big machine: `SOVEREIGN_DEMO_MODEL=qwen3.6:35b ./.venv/bin/python demo_full_governance.py`.
+- Stronger actor on a big machine: `SOVEREIGN_DEMO_MODEL=qwen3.6:35b uv run python demo_full_governance.py`.
 
 ## What's real here (in case someone asks / doubts)
 - The model runs locally via Ollama. No API key, no network call offsite.
