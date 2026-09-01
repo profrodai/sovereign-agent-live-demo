@@ -1,4 +1,4 @@
 # The two frameworks, straight from PyPI — the same thing you'd install in any
 # real project. No dev repo, no editable installs.
 sovereign-agent==1.1.0   # the governance framework (needs Python 3.14; 1.1.0 ships the built-in ollama provider)
-zeocore==0.5.0           # the capability/tool framework the tool is built with
+zeocore==0.6.0           # the capability/tool framework the tool is built with
