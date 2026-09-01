@@ -25,7 +25,7 @@ next two use a real local model.
 
 | Requirement | Why | How to get it |
 |---|---|---|
-| **Python 3.14+** | `sovereign-agent` 1.1.0 needs it | [python.org/downloads](https://www.python.org/downloads/) — or `pyenv install 3.14.3` |
+| **[uv](https://docs.astral.sh/uv/)** | installs Python 3.14 and both packages for you | `curl -LsSf https://astral.sh/uv/install.sh \| sh` — or `brew install uv` |
 | **Ollama** | runs the model locally, no cloud, no API key | [ollama.com/download](https://ollama.com/download) |
 | **~6 GB free disk + ~8 GB RAM** | to hold the small model | most laptops are fine |
 | ~10 minutes | one-time download of the model | ☕ |
@@ -43,17 +43,17 @@ cd sovereign-agent-live-demo
 bash setup.sh
 ```
 
-`setup.sh` creates a local `.venv`, installs `sovereign-agent` and `zeocore`
-**from PyPI** (exactly what you'd do in a real project — not from a source
-repo), checks Ollama, downloads a small model, and warms it up.
+`setup.sh` uses **uv** to install `sovereign-agent` and `zeocore` **from
+PyPI** (exactly what you'd do in a real project — not from a source repo;
+uv supplies Python 3.14 itself), checks Ollama, downloads a small model,
+and warms it up.
 
 <details>
 <summary>Prefer to do it by hand? (click)</summary>
 
 ```bash
-python3.14 -m venv .venv
-./.venv/bin/pip install -r requirements.txt      # sovereign-agent + zeocore, from PyPI
-ollama pull qwen3:latest                          # ~5 GB, one time
+uv sync                   # sovereign-agent + zeocore, from PyPI; Python 3.14 included
+ollama pull qwen3:latest  # ~5 GB, one time
 ```
 </details>
 
@@ -61,13 +61,14 @@ ollama pull qwen3:latest                          # ~5 GB, one time
 
 ## Run it — three steps
 
-Everything below uses the interpreter inside `.venv`, so dependencies are the
-ones you just installed. (`./.venv/bin/python` on macOS/Linux.)
+Everything below runs through `uv run`, so it always uses the environment
+you just installed — no activation, same commands on macOS, Linux, and
+Windows.
 
 ### Step 1 — Offline warmup (no model needed): watch a company *catch a lie*
 
 ```bash
-./.venv/bin/sovereign-agent demo store --mode simulated
+uv run sovereign-agent demo store --mode simulated
 ```
 
 This runs the full governance loop with a *scripted* actor. It ends with a
@@ -83,7 +84,7 @@ the company **refuses to accept** (exit code `1`). That is the punchline:
 ### Step 2 — LIVE: a real model calls a real tool, and gets governed
 
 ```bash
-./.venv/bin/python demo_tool_calling.py
+uv run python demo_tool_calling.py
 ```
 
 A customer buys vanilla ice cream; stock drops **below** the reorder point. The
@@ -118,7 +119,7 @@ Two things to notice:
 ### Step 3 — LIVE: the *full* governed loop, driven by the model
 
 ```bash
-./.venv/bin/python demo_full_governance.py
+uv run python demo_full_governance.py
 ```
 
 This time the actor is bound to sovereign-agent's **built-in `ollama` provider**
@@ -187,7 +188,7 @@ moved, stock is genuinely full — driven by the provider that ships in the box.
 | `Connection refused` on `localhost:11434` | Ollama isn't running. Open the Ollama app, or run `ollama serve` in another terminal. |
 | First live run is slow (30–60 s) | Normal — the model is loading into RAM. Later runs are faster. Warm it first: `printf '' \| ollama run qwen3:latest`. |
 | Laptop is low on RAM | Use the small model (default). Avoid the 35B option below. |
-| Want a stronger, slower actor | `SOVEREIGN_DEMO_MODEL=qwen3.6:35b ./.venv/bin/python demo_tool_calling.py` (needs ~24 GB). |
+| Want a stronger, slower actor | `SOVEREIGN_DEMO_MODEL=qwen3.6:35b uv run python demo_tool_calling.py` (needs ~24 GB). |
 
 Config knobs (environment variables):
 - `SOVEREIGN_DEMO_MODEL` — which Ollama model to use (default `qwen3:latest`).
@@ -202,7 +203,7 @@ Config knobs (environment variables):
 - Read `demo_full_governance.py` — how little it takes to bind an actor to the
   built-in `ollama` provider and run the full governed loop.
 - Open the **Sovereign Agent** textbook (`sovereign-agent demo store` is
-  Chapter 0) and keep going: `pip install sovereign-agent`.
+  Chapter 0) and keep going: `uvx sovereign-agent@latest doctor`.
 
 ## Files in this folder
 
@@ -210,6 +211,6 @@ Config knobs (environment variables):
 |---|---|
 | `README.md` | this guide |
 | `setup.sh` | one-time setup |
-| `requirements.txt` | the two PyPI packages |
+| `pyproject.toml` | the two PyPI packages, pinned |
 | `demo_tool_calling.py` | **Step 2** — live tool call + governance + refusal (in-process) |
 | `demo_full_governance.py` | **Step 3** — full governed loop via the built-in `ollama` provider |
