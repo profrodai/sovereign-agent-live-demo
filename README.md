@@ -25,7 +25,7 @@ next two use a real local model.
 
 | Requirement | Why | How to get it |
 |---|---|---|
-| **Python 3.14+** | `sovereign-agent` 1.0.0 needs it | [python.org/downloads](https://www.python.org/downloads/) — or `pyenv install 3.14.3` |
+| **Python 3.14+** | `sovereign-agent` 1.1.0 needs it | [python.org/downloads](https://www.python.org/downloads/) — or `pyenv install 3.14.3` |
 | **Ollama** | runs the model locally, no cloud, no API key | [ollama.com/download](https://ollama.com/download) |
 | **~6 GB free disk + ~8 GB RAM** | to hold the small model | most laptops are fine |
 | ~10 minutes | one-time download of the model | ☕ |
@@ -121,22 +121,24 @@ Two things to notice:
 ./.venv/bin/python demo_full_governance.py
 ```
 
-Same real tool call, but now the proposal flows through the **entire** Sovereign
-Agent pipeline — assignment → run → **atomic commit** → independent
-**verification** → principal **acceptance**:
+This time the actor is bound to sovereign-agent's **built-in `ollama` provider**
+(shipped in 1.1.0 — no custom code). The model reads the assignment and
+proposes, and the proposal flows through the **entire** pipeline — assignment →
+run → **atomic commit** → independent **verification** → principal
+**acceptance**:
 
 ```
-2) Actor operator-course rebound to provider 'ollama'. Running the assignment
-   (qwen tool-calls the ZeoCore inspect_inventory capability, then proposes)...
-3) qwen's governed ActorReport proposed: 1 units.
+2) Actor operator-course bound to the built-in 'ollama' provider. Running the
+   assignment — qwen3:latest reads the scope and proposes a governed ActorReport...
+3) The model's governed ActorReport: status=completed, proposed=1 units.
 4) COMMITTED + VERIFIED + ACCEPTED.
    inventory now: on_hand=3 (>= reorder 3) — tub genuinely full
    cash ledger: [('cash-opening', 10000), ('cash', 1000), ('cash', -250)]
    status: out_...  ACCEPTED  Keep the vanilla tub stocked
 ```
 
-A real local model tool-called a ZeoCore tool, and its proposal became a real,
-verified, accepted outcome — money moved, stock is genuinely full.
+A real local model's proposal became a real, verified, accepted outcome — money
+moved, stock is genuinely full — driven by the provider that ships in the box.
 
 ---
 
@@ -162,11 +164,14 @@ verified, accepted outcome — money moved, stock is genuinely full.
    └───────────────────────────────────┘
 ```
 
-- **The tool** — `store_tool.py`. A plain Python function decorated with
-  `@capability` from **ZeoCore**. It has a typed request/response and declares a
-  `READ` effect. The model is handed its JSON schema and may call it.
-- **The actor** — the model, given that one tool. It *proposes*; it cannot
-  commit anything.
+- **The tool** — the `inspect_inventory` capability defined inline in
+  `demo_tool_calling.py`. A plain Python function decorated with `@capability`
+  from **ZeoCore**, with a typed request/response and a declared `READ` effect.
+  The model is handed its JSON schema and may call it (Step 2).
+- **The actor** — the model. It *proposes*; it cannot commit anything. In Step 2
+  it's driven in-process to show a tool call; in Step 3 it's the **built-in
+  `ollama` provider** that ships with sovereign-agent 1.1.0 — bind an actor to
+  it with `provider = "ollama"` and one env var, no custom code.
 - **The governance** — `sovereign-agent`. It re-validates every proposal against
   the real ledger, enforces limits, and only then commits — atomically — with
   independent verification and a final acceptance step.
@@ -192,8 +197,10 @@ Config knobs (environment variables):
 
 ## Where to go next
 
-- Read `store_tool.py` — it's ~60 lines and shows a complete ZeoCore capability.
-- Read `demo_tool_calling.py` — the model loop and the governance check, side by side.
+- Read `demo_tool_calling.py` — a complete ZeoCore capability, the model's
+  tool-calling loop, and the governance check, side by side (~200 lines).
+- Read `demo_full_governance.py` — how little it takes to bind an actor to the
+  built-in `ollama` provider and run the full governed loop.
 - Open the **Sovereign Agent** textbook (`sovereign-agent demo store` is
   Chapter 0) and keep going: `pip install sovereign-agent`.
 
@@ -204,7 +211,5 @@ Config knobs (environment variables):
 | `README.md` | this guide |
 | `setup.sh` | one-time setup |
 | `requirements.txt` | the two PyPI packages |
-| `store_tool.py` | the ZeoCore tool + the model's tool-calling loop |
-| `demo_tool_calling.py` | **Step 2** — live tool call + governance + refusal |
-| `demo_full_governance.py` | **Step 3** — live actor through the full governed loop |
-| `ollama_actor.py` | the actor subprocess used by Step 3 |
+| `demo_tool_calling.py` | **Step 2** — live tool call + governance + refusal (in-process) |
+| `demo_full_governance.py` | **Step 3** — full governed loop via the built-in `ollama` provider |
